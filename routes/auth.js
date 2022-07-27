@@ -1,8 +1,14 @@
 import express from'express';
 
 import User from '../models/User.js';
+import {auth} from './verifyToken.js'
+
 
 import bcrypt from 'bcryptjs'
+
+import jwt from 'jsonwebtoken'
+
+
 
 import { registrationValidation , loginValidation} from '../validation.js';
 
@@ -68,8 +74,26 @@ router.post('/login', async (req, res) => {
     const passwordMatched = await bcrypt.compare(req.body.password, userLog.password)
     if (!passwordMatched){return res.status(400).send(' passwored don\'t match')}
     
-    res.send('Logged In!!')
 
+    //create token jwt , as a security mesure that the user is logged in
+
+    const token = jwt.sign({_id: userLog._id}, process.env.TOKEN_SECRET)
+    res.cookie('authtoken', token).send(token)
+    
+
+})
+
+router.get('/signout',  auth,  async (req,res) =>
+{
+    
+    console.log('Cookies: ', req.cookies)
+    const userLoggedIn = await User.findById( req.user._id )
+    
+    res.clearCookie('authtoken')
+    res.send(`GoodBye ${userLoggedIn.name} !!`)
+    
+   
+    
 })
 
 
